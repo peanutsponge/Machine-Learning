@@ -1,41 +1,35 @@
 import gym
 import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
-## load sequential models
 from keras.models import Sequential
+from keras.layers import Dense, Activation, Input
 
-## load a dense layer all-to-all connection
-from keras.layers import Dense, Activation
-
-
-def StoQ(state):
-    # interpret the state and assign location indices inside the Q matrix
-    return tuple(np.round((state - Smin) * Qdimn).astype(int))
-
-
+N1 = 8
+N2 = 10
 def create_q_model():
     ## create model instance
-    model = Sequential([
-        Dense(10, input_dim=Qdim1 + Qdim2),
-        Activation('relu'),
-        Dense(10),
-        Activation('relu'),
-        Dense(num_actions)])
+    model = Sequential()
+    model.add(Dense(N1, input_dim=2, kernel_initializer='normal', activation="relu"))
+    model.add(Dense(N2, input_dim=N1, kernel_initializer="normal", activation="relu"))
+    model.add(Dense(num_actions,input_dim=N2, kernel_initializer="normal", activation="linear"))
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=['accuracy'])
     return model
 
+def predict(state):
+    state_tensor = tf.convert_to_tensor(state)
+    state_tensor = tf.expand_dims(state_tensor, 0)
+    return model_main.predict(state_tensor)
 
 def QLearn(w, d, ε, ε_min, num_games):
     wins = 0
-    last_1p_wins = 0
-
     ε_adj = (ε - ε_min) / num_games
 
-    for p in tqdm(range(num_games)):
-        loc = StoQ(env.reset())
+    for _ in tqdm(range(num_games)):
+        state = env.reset()
+        Qold = predict(state)
         done = False
-        while not done:  # automaticaly gets satisfied after 200 actions
-            Qold = Q[loc]
+        while not done:  # automatically gets satisfied after 200 actions
 
             if np.random.random() < ε:
                 a = env.action_space.sample()  # pick a random
@@ -43,19 +37,16 @@ def QLearn(w, d, ε, ε_min, num_games):
                 a = np.argmax(Qold)  # pick the optimal
 
             state, reward, done, info = env.step(a)  # execute the action
-
-            loc_new = StoQ(state)
-
+            Qnew = predict(state)
             won = done and not info
             # Change Q
-            Qold[a] = reward if won else (1 - w) * Qold[a] + w * (reward + d * np.max(Q[loc_new]))
+            Qtarget = reward if won else (1 - w) * Qold[a] + w * (reward + d * np.max(Qnew))
+            Qold = Qnew
 
-            loc = loc_new
+            model_main.fit(state, Qtarget, verbose=0)
         wins += won
-        last_1p_wins += won and p >= num_games * 0.9
         ε -= ε_adj
-
-    return wins, last_1p_wins
+    return wins
 
 
 def Qtest(runs=5000):
@@ -64,10 +55,8 @@ def Qtest(runs=5000):
     for i in tqdm(range(runs)):
         state = env.reset()
         done = False
-        # counter = 0
         while not done:
-            loc = StoQ(state)
-            a = np.argmax(Q[loc])
+            a = np.argmax(predict(state))
             state, reward, done, info = env.step(a)
             total_reward_array[i] += reward
         wins += not info
@@ -77,21 +66,14 @@ def Qtest(runs=5000):
 # ---------------GLOBAL VARIABLES-----------------#
 env = gym.make('MountainCar-v0')  # selects the type of game
 num_actions = env.action_space.n
-Smin = env.observation_space.low
-Smax = env.observation_space.high
-dS = 1 / (Smax - Smin)
-Qdim = [15, 10, num_actions]  # dimensions of Q-matrix
-Qdim1, Qdim2, _ = Qdim
-Qdimn = [Qdim1 - 1, Qdim2 - 1] * dS
 
 model_main = create_q_model()
-model_target = create_q_model()
+# model_target = create_q_model()
+#
+# stepsize_main = 4
+# stepsize_taget = 100
 
-stepsize_main = 4
-stepsize_taget = 100
-
-Q = np.random.uniform(low=-1, high=1, size=(Qdim[0], Qdim[1], Qdim[2]))  # random initial Q matrix
-wins, last_1p_wins = QLearn(  # Trains a Q-matrix
+wins = QLearn(  # Trains a Q-matrix
     w=0.15,  # learning rate
     d=0.95,  # discount rate
     ε=0.80,  # εilon greedy strategy
@@ -100,6 +82,5 @@ wins, last_1p_wins = QLearn(  # Trains a Q-matrix
 )
 
 print('Training ended. Number of wins:', wins)
-# print(f'Training ended. Number of wins in last {int(0.1 * num_games)}:', last_1p_wins)
 print('Test ended. Number of wins, min reward, avg reward, max reward:', Qtest(runs=500))
 env.close()  # close the openai gym environment
