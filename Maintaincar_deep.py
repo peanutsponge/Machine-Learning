@@ -8,6 +8,8 @@ from keras.layers import Dense, Activation, Input
 num_states = 2
 N1 = 24
 N2 = 48
+
+
 def create_q_model():
     ## create model instance
     model = Sequential()
@@ -38,18 +40,16 @@ def QLearn(w, d, ε, ε_min, num_games):
         Qold = predict(state)
         done = False
         while not done:  # automatically gets satisfied after 200 actions
-            a = action(state, ε)
-            newstate, reward, done, info = env.step(a)  # execute the action
+            newstate, reward, done, info = env.step(action(state, ε))  # execute the action
             Qnew = predict(newstate)
-            won = done and not info
             # Change Q
-            if won:
-                Qtarget = reward
+            if done and not info:
+                Qtarget = np.ones_like(Qold) * reward
+                wins += 1
             else:
                 Qtarget = (1 - w) * Qold + w * (reward + d * np.max(Qnew))
             Qold = Qnew
             model_main.fit(np.array([state]), np.array([Qtarget]), verbose=0)
-        wins += won
         ε -= ε_adj
     return wins
 
@@ -73,11 +73,11 @@ tf.compat.v1.disable_eager_execution()
 model_main = create_q_model()
 
 wins = QLearn(  # Trains a Q-matrix
-    w=0.15,  # learning rate
-    d=0.95,  # discount rate
-    ε=0.80,  # ε greedy strategy
+    w=0.05,  # learning rate
+    d=0.99,  # discount rate
+    ε=1,  # ε greedy strategy
     ε_min=-3,
-    num_games=200  # number of training games
+    num_games=50  # number of training games
 )
 
 print('Training ended. Number of wins:', wins)
