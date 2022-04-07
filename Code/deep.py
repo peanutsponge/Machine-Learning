@@ -31,11 +31,14 @@ def action(state, ε):
 
 
 def to_state(obs, info):
-    state = [info['eyes']]
     player = info['player']
     opponents = [0, 1, 2, 3]
     opponents.remove(player)
+    # TODO move above to loop per game for optimisation
+
+    state = [info['eyes']]
     for pin in [0, 1, 2, 3]:
+        distances = [np.inf] * no_distances_per_pin  # TODO Check whether np.inf is good
         pin_loc = obs[player][pin]
         state.append(pin_loc)  # TODO Check whether this is good
         if pin_loc > 40 or pin_loc == 0:  # player pin is in hb or not on board
@@ -48,9 +51,10 @@ def to_state(obs, info):
                     continue
                 opponent_pin_loc += 10 * opponent - 1
                 opponent_pin_loc %= 40
-                state.append(opponent_pin_loc - pin_loc)
-    if len(state) < 17:
-        #TODO maak groot genoeg
+                distances.append(opponent_pin_loc - pin_loc)
+        distances.sort()
+        state.append(distances[:no_distances_per_pin])
+    return state
 
 
 def predict(state):
@@ -63,6 +67,7 @@ def QLearn(w, d, ε, ε_min, num_games):
 
     for _ in tqdm(range(num_games)):
         state = env.reset()
+
         done = False
         while not done:  # automatically gets satisfied after 200 actions
             a = action(state, ε)
@@ -100,6 +105,8 @@ env = make(num_players=4)
 num_actions = env.action_space.n
 tf.compat.v1.disable_eager_execution()
 model_main = create_q_model()
+
+no_distances_per_pin = 4
 
 wins = QLearn(  # Trains a Q-matrix
     w=0.15,  # learning rate
