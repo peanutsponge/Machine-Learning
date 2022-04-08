@@ -1,4 +1,4 @@
-from ludo import make
+from Code.ludo import make
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm

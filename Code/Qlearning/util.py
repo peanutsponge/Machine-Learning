@@ -1,9 +1,9 @@
 import numpy as np
 import random
-from ludo import random_player, eager_player
+from Code.ludo import random_player, eager_player
 
 our_player = 'our_player'
-players = [our_player, eager_player, random_player, random_player]
+players = [our_player, random_player, random_player, random_player]
 player = 0
 opponents = [0, 1, 2, 3]
 backwards_view_range = 0

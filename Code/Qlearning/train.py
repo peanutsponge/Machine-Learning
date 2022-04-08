@@ -1,6 +1,6 @@
 import numpy as np
 from tqdm import tqdm
-from ludo import make
+from Code.ludo import make
 from util import evaluate, toIndex, start_game, winner, Qdim, player, players, our_player
 
 
@@ -40,7 +40,7 @@ def learn(d, w, eps, eps_min, num_games):
 
 
 def test(num_games=500):
-    wins = [0, 0, 0, 0]
+    wins = 0
     for _ in tqdm(range(num_games)):
         state, rew, done, info = env.reset()
         while not done:
@@ -49,8 +49,9 @@ def test(num_games=500):
                 state, rew, done, info = env.step(Q[toIndex(state, info['eyes'])])
             else:
                 state, rew, done, info = env.step(current_player(state, info))
-        wins[winner(state)] += 1
-    return wins
+        if winner(state) == player:
+            wins += 1
+    return wins / num_games
 
 
 # ---------------GLOBAL VARIABLES-----------------#
@@ -65,5 +66,6 @@ print('Training ended. Win rate:',
           eps=0.80,  # epsilon greedy strategy
           eps_min=-3,
           num_games=100000))  # number of training games
+np.save("Q", Q)
 print(f'Test ended. Win rate:', test(num_games=100000))
-print(players)
+
