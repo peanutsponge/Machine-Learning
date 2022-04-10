@@ -6,9 +6,9 @@ our_player = 'our_player'
 players = [our_player, random_player, random_player, random_player]
 player = 0
 opponents = [0, 1, 2, 3]
-backwards_view_range = 0
+backwards_view_range = 2
 forwards_view_range = 3
-no_forward = 1
+no_forward = 2
 no_backward = 0
 
 Qdim = [forwards_view_range + 1] * 4 * no_forward + [backwards_view_range + 1] * 4 * no_backward + [6] + [4]
