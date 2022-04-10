@@ -65,7 +65,7 @@ print('Training ended. Win rate:',
           d=0.95,  # discount rate
           eps=0.80,  # epsilon greedy strategy
           eps_min=-3,
-          num_games=100000))  # number of training games
+          num_games=1000))  # number of training games
 np.save("Q", Q)
-print(f'Test ended. Win rate:', test(num_games=100000))
+print(f'Test ended. Win rate:', test(num_games=1000))
 

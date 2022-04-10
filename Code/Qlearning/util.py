@@ -8,12 +8,10 @@ player = 0
 opponents = [0, 1, 2, 3]
 backwards_view_range = 0
 forwards_view_range = 3
+no_forward = 1
+no_backward = 0
 
-Qdim = [backwards_view_range + forwards_view_range + 1,
-        backwards_view_range + forwards_view_range + 1,
-        backwards_view_range + forwards_view_range + 1,
-        backwards_view_range + forwards_view_range + 1,
-        6, 4]  # dimensions of Q-matrix
+Qdim = [forwards_view_range + 1] * 4 * no_forward + [backwards_view_range + 1] * 4 * no_backward + [6] + [4]
 
 
 def evaluate_player(state, player_):
@@ -57,9 +55,9 @@ def start_game(env):
 
 
 def toIndex(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
-    index = np.zeros(5, dtype=int)
+    index = np.zeros(len(Qdim), dtype=int)
     for pin in [0, 1, 2, 3]:
-        distances = []
+        distances_p, distances_n = [], []
         pin_index = state[player][pin]
         if pin_index > 40 or pin_index == 0:  # player pin is in hb or not on board
             continue
@@ -71,15 +69,16 @@ def toIndex(state, eyes):  # interpret the state and assign indexation indices i
                     continue
                 opponent_pin_index += 10 * opponent - 1
                 opponent_pin_index %= 40
-                distances.append(opponent_pin_index - pin_index)
-        distances = [x for x in distances if -backwards_view_range <= x <= forwards_view_range]
-        if distances:
-            distances_p = [x for x in distances if x > 0]
-            distances_n = [x for x in distances if x < 0]
+                distance = opponent_pin_index - pin_index
+                if 0 < distance < forwards_view_range:
+                    distances_p.append(distance)
+                elif 0 < -distance < -backwards_view_range:
+                    distances_p.append(-distance)
             distances_p.sort()
-            distances_n.sort(reverse=True)
-            d_p = distances_p[0] if distances_p else np.inf
-            d_n = distances_n[0] if distances_n else -np.inf
-            index[pin] = d_p if d_p <= -d_n else d_n
-    index[4] = eyes - 1
+            distances_n.sort()
+            distances_p += [0] * no_forward
+            distances_n += [0] * no_backward
+            index[pin * no_forward:(pin + 1) * no_forward] = distances_p[:no_forward]
+            index[(pin + 1) * no_forward:(pin + 1) * no_forward + no_backward] = distances_n[:no_backward]
+    index[-2] = eyes - 1
     return tuple(index)
