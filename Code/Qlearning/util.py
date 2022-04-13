@@ -7,11 +7,15 @@ players = [our_player, random_player, random_player, random_player]
 player = 0
 opponents = [0, 1, 2, 3]
 backwards_view_range = 2
-forwards_view_range = 3
+forwards_view_range = 6
 no_forward = 2
 no_backward = 0
-
-Qdim = [forwards_view_range + 1] * 4 * no_forward + [backwards_view_range + 1] * 4 * no_backward + [6] + [4]
+no_pins = 1
+Qdim = [forwards_view_range + 1] * no_pins * no_forward + \
+       [backwards_view_range + 1] * no_pins * no_backward + \
+       [4] * no_pins + \
+       [6] + \
+       [4]
 
 
 def evaluate_player(state, player_):
@@ -55,10 +59,11 @@ def start_game(env):
 
 
 def toIndex(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
-    index = np.zeros(len(Qdim), dtype=int)
-    for pin in [0, 1, 2, 3]:
+    index = np.zeros(len(Qdim)-1, dtype=int)
+    pins = np.argsort(state[player])
+    for i in range(no_pins):
         distances_p, distances_n = [], []
-        pin_index = state[player][pin]
+        pin_index = state[player][pins[i]]
         if pin_index > 40 or pin_index == 0:  # player pin is in hb or not on board
             continue
         pin_index += 10 * player - 1
@@ -78,7 +83,8 @@ def toIndex(state, eyes):  # interpret the state and assign indexation indices i
             distances_n.sort()
             distances_p += [0] * no_forward
             distances_n += [0] * no_backward
-            index[pin * no_forward:(pin + 1) * no_forward] = distances_p[:no_forward]
-            index[(pin + 1) * no_forward:(pin + 1) * no_forward + no_backward] = distances_n[:no_backward]
-    index[-2] = eyes - 1
+            index[i * no_forward:(i + 1) * no_forward] = distances_p[:no_forward]
+            index[(i + 1) * no_forward:(i + 1) * no_forward + no_backward] = distances_n[:no_backward]
+    index[-no_pins - 1:-1] = pins[:no_pins]
+    index[-1] = eyes - 1
     return tuple(index)
