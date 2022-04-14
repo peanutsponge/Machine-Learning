@@ -2,11 +2,11 @@ import numpy as np
 import random
 from ludo import random_player
 
-'''for start game'''
+'''PLAYERS FOR TRAINING'''
 our_player = 'our_player'
 players = [our_player, random_player, random_player, random_player]
 
-'''for get_index()'''
+'''PLACE HOLDER GLOBAL VARIABLES'''
 player = 0
 opponents = [0, 1, 2, 3]
 
@@ -18,6 +18,12 @@ Qdim = [forwards_view_range + 1] * no_pins * no_forward + [4] * no_pins + [6] + 
 
 
 def evaluate_player(state, player_):
+    """
+    Scores a player based on how far they've progressed
+    :param state: state of the board as defined in the project manual
+    :param player_: The player to be scored 0-4
+    :return: The score of the player
+    """
     score = 0
     for pin in [0, 1, 2, 3]:
         pin_index = state[player_][pin]
@@ -30,23 +36,36 @@ def evaluate_player(state, player_):
     return score
 
 
-def evaluate(state, reward_old=0):
+def evaluate(state, score_old=0):
+    """
+    Scores the AI based on the it's own score and the core of the opponents
+    :param state: state of the board as defined in the project manual
+    :param score_old: The score before the AI made a move
+    :return: The score of the AI
+    """
     score = 0
     score += 0.003 * evaluate_player(state, player)
     for opponent in opponents:
         score -= 0.001 * evaluate_player(state, opponent)
-    return score - reward_old
+    return score - score_old
 
 
 def winner(state):
+    """
+    Determines who the winner of the game is
+    :param state: state of the board as defined in the project manual
+    :return: the winner of the game
+    """
     scores = [sum([pos > 40 for pos in s]) for s in state]  # no of pawns in target field for each player
     return np.argsort(scores)[-1]
 
 
 def start_game(env):
-    """"
+    """
     Ensures the AI has a randomised starting position
     Plays until it is the AI's turn
+    :param env: The environment that's being played in
+    :return: state, reward, done, info of the last played turn
     """
     global players, player, opponents
     random.shuffle(players)
@@ -61,7 +80,13 @@ def start_game(env):
     return state, reward, done, info
 
 
-def get_index(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
+def get_index(state, eyes):
+    """
+    interpret the state and assign indexation indices inside the Q matrix
+    :param state: state of the board as defined in the project manual
+    :param eyes: eyes of the dice in range 1-6
+    :return: Index for Q matrix such that it returns the action probabilities
+    """
     state = np.array(state)
     index = np.zeros(len(Qdim) - 1, dtype=int)
     '''get the absolute positions'''

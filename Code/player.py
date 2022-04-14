@@ -1,14 +1,17 @@
-# import required packages
 import numpy as np
 import util as util
-
 
 start = True
 Q = None
 
 
-# define the function player()
 def player(obs, info):
+    """
+    Returns t
+    :param obs: state of the board as defined in the project manual
+    :param info: dictionary containing 'player' 0-4 and 'eyes' 1-6
+    :return: list of favorable actions
+    """
     global start
     if start:
         util.player = info['player']
@@ -18,6 +21,10 @@ def player(obs, info):
 
 
 def main():
+    """
+    initialises the Q matrix
+    :return: nothing
+    """
     global Q
     print('Importing player-file Group-13')
     Q = np.load("Q.npy")
