@@ -2,6 +2,12 @@ import numpy as np
 import random
 from ludo import random_player
 
+'''GLOBAL CONSTANTS'''
+forwards_view_range = 6  # how many tiles it can see forwards
+no_forward = 2  # how many opponents it can see forwards
+no_pins = 2  # how many of our own pins should be able to see
+Qdim = [forwards_view_range + 1] * no_pins * no_forward + [4] * no_pins + [6] + [4]
+
 '''PLAYERS FOR TRAINING'''
 our_player = 'our_player'
 players = [our_player, random_player, random_player, random_player]
@@ -9,12 +15,6 @@ players = [our_player, random_player, random_player, random_player]
 '''PLACE HOLDER GLOBAL VARIABLES'''
 player = 0
 opponents = [0, 1, 2, 3]
-
-'''GLOBAL CONSTANTS'''
-forwards_view_range = 6  # how many tiles it can see forwards
-no_forward = 2  # how many opponents it can see forwards
-no_pins = 2  # how many of our own pins should be able to see
-Qdim = [forwards_view_range + 1] * no_pins * no_forward + [4] * no_pins + [6] + [4]
 
 
 def evaluate_player(state, player_):
@@ -28,11 +28,11 @@ def evaluate_player(state, player_):
     for pin in [0, 1, 2, 3]:
         pin_index = state[player_][pin]
         if pin_index > 40:
-            score += 100
+            score += 100  # add score when in home base
         elif pin_index == 0:
-            score -= 100
+            score -= 100  # deduct score when at start
         else:
-            score += pin_index
+            score += pin_index  # add score for progress to home base
     return score
 
 
@@ -44,9 +44,9 @@ def evaluate(state, score_old=0):
     :return: The score of the AI
     """
     score = 0
-    score += 0.003 * evaluate_player(state, player)
+    score += 0.003 * evaluate_player(state, player)  # add our own score
     for opponent in opponents:
-        score -= 0.001 * evaluate_player(state, opponent)
+        score -= 0.001 * evaluate_player(state, opponent)  # subtract our opponents score
     return score - score_old
 
 
@@ -68,11 +68,11 @@ def start_game(env):
     :return: state, reward, done, info of the last played turn
     """
     global players, player, opponents
-    random.shuffle(players)
+    random.shuffle(players)  # randomize the order
     opponents = [0, 1, 2, 3]
-    player = players.index(our_player)
-    opponents.remove(player)
-
+    player = players.index(our_player)  # denote who we are
+    opponents.remove(player)  # denote who the opponents are
+    '''play until it is our move'''
     state, reward, done, info = env.reset()
     while info['player'] != player:
         current_player = players[info['player']]
@@ -113,9 +113,9 @@ def get_index(state, eyes):
             continue
         distances = opponent_state_abs - pins_state_abs[pins[i]]
         distances.sort()
-        distances = distances[(distances > 0) * (distances < forwards_view_range)]
+        distances = distances[(distances > 0) * (distances < forwards_view_range)]  # apply view distance
         distances = np.append(distances, [0] * no_forward)
-        index[i * no_forward:(i + 1) * no_forward] = distances[:no_forward]
+        index[i * no_forward:(i + 1) * no_forward] = distances[:no_forward]  # apply view amount
     index[-no_pins - 1:-1] = pins[:no_pins]
     index[-1] = eyes - 1
     return tuple(index)
