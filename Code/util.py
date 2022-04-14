@@ -1,23 +1,20 @@
 import numpy as np
 import random
-from ludo import random_player, eager_player
+from ludo import random_player
 
+'''for start game'''
 our_player = 'our_player'
 players = [our_player, random_player, random_player, random_player]
+
+'''for get_index()'''
 player = 0
 opponents = [0, 1, 2, 3]
 
-backwards_view_range = 2  # how many tiles it can see backwards
+'''GLOBAL CONSTANTS'''
 forwards_view_range = 6  # how many tiles it can see forwards
-no_forward = 3  # how many opponents it can see forwards
-no_backward = 0  # how many opponents it can see backwards
-no_pins = 1  # how many of our own pins should be able to see
-
-Qdim = [forwards_view_range + 1] * no_pins * no_forward + \
-       [backwards_view_range + 1] * no_pins * no_backward + \
-       [4] * no_pins + \
-       [6] + \
-       [4]  # the number of actions
+no_forward = 2  # how many opponents it can see forwards
+no_pins = 2  # how many of our own pins should be able to see
+Qdim = [forwards_view_range + 1] * no_pins * no_forward + [4] * no_pins + [6] + [4]
 
 
 def evaluate_player(state, player_):
@@ -47,6 +44,10 @@ def winner(state):
 
 
 def start_game(env):
+    """"
+    Ensures the AI has a randomised starting position
+    Plays until it is the AI's turn
+    """
     global players, player, opponents
     random.shuffle(players)
     opponents = [0, 1, 2, 3]
@@ -60,37 +61,36 @@ def start_game(env):
     return state, reward, done, info
 
 
-def toIndex(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
+def get_index(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
+    state = np.array(state)
     index = np.zeros(len(Qdim) - 1, dtype=int)
-    pins_state = np.array(state[player])
-    pins = np.argsort(pins_state)
-    pins = np.concatenate((pins[(pins_state <= 40) * (pins_state != 0)],
-                           pins[pins_state == 0],
-                           pins[pins_state > 40]))  # put pins in hb or start to the back
+    '''get the absolute positions'''
+    state_abs = state.copy()
+    state_abs += np.array([0, 10, 20, 30]).reshape(-1, 1)
+    state_abs -= 1
+    state_abs %= 40
+    '''split/filter positions'''
+    pins_state = state[player]
+    pins_state_abs = state_abs[player]
+    opponent_state = np.ravel(state[opponents])  # all opponent are treated equally
+    opponent_state_abs = np.ravel(state_abs[opponents])
+    opponent_state_abs = opponent_state_abs[(opponent_state > 0) * (opponent_state <= 40)]  # remove opponents hb/start
+    '''Sort our own pins'''
+    pins_start = list(np.argwhere(pins_state < 1).T[0])  # pins at the start
+    pins_hb = list(np.argwhere(pins_state > 40).T[0])  # pins in homebase
+    pins_bad = pins_start + pins_hb
+    pins_good = np.flip(np.argsort(pins_state))  # sort pins in order of closest to homebase
+    pins_good = [i for i in pins_good if i not in pins_bad]
+    pins = pins_good + pins_bad  # put pins in hb or start to the back
+    '''get the distances'''
     for i in range(no_pins):
-        distances_p, distances_n = [], []
-        pin_index = state[player][pins[i]]
-        if pin_index > 40 or pin_index == 0:  # player pin is in hb or not on board
+        if pins[i] in pins_bad:
             continue
-        pin_index += 10 * player - 1
-        pin_index %= 40
-        for opponent in opponents:
-            for opponent_pin_index in state[opponent]:
-                if opponent_pin_index == 0 or opponent_pin_index > 40:  # enemy pin is in hb or not on board
-                    continue
-                opponent_pin_index += 10 * opponent - 1
-                opponent_pin_index %= 40
-                distance = opponent_pin_index - pin_index
-                if 0 < distance < forwards_view_range:
-                    distances_p.append(distance)
-                elif 0 < -distance < -backwards_view_range:
-                    distances_p.append(-distance)
-            distances_p.sort()
-            distances_n.sort()
-            distances_p += [0] * no_forward
-            distances_n += [0] * no_backward
-            index[i * no_forward:(i + 1) * no_forward] = distances_p[:no_forward]
-            index[(i + 1) * no_forward:(i + 1) * no_forward + no_backward] = distances_n[:no_backward]
+        distances = opponent_state_abs - pins_state_abs[pins[i]]
+        distances.sort()
+        distances = distances[(distances > 0) * (distances < forwards_view_range)]
+        distances = np.append(distances, [0] * no_forward)
+        index[i * no_forward:(i + 1) * no_forward] = distances[:no_forward]
     index[-no_pins - 1:-1] = pins[:no_pins]
     index[-1] = eyes - 1
     return tuple(index)

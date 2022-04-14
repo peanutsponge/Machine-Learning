@@ -1,44 +1,18 @@
-# import required packages
 from tqdm import tqdm
 from ludo import make
-import numpy as np
-
-# import players
 from player import player as q_player
 from ludo import random_player
+from util import winner
 
-# constants
-PLAYER2COLOR = ['Yellow', 'Red', 'Blue', 'Green']
-
-# create a list of players
-players = [random_player, random_player, q_player, random_player]
-
-# create list of scores
-wins = [0, 0, 0, 0]
-
-# create an instance of the game with 4 players
-env = make(num_players=4, render=False)
-
-num_games = 1000
-
+players = [random_player, random_player, q_player, random_player]  # create a list of players
+num_games = 10000
+wins = [0, 0, 0, 0]  # create list of scores
+env = make(num_players=4, render=False)  # create an instance of the game with 4 players
 for game in tqdm(range(num_games)):
-    # reset the game
-    obs, rew, done, info = env.reset()
-
-    # play the game until finished
-    while not done:
-        # get an action from the current player
-        current_player = players[info['player']]
+    obs, _, done, info = env.reset()  # reset the game
+    while not done:  # play the game until finished
+        current_player = players[info['player']]  # get an action from the current player
         action = current_player(obs, info)
-
-        # pass the action and get the new game-state
-        obs, rew, done, info = env.step(action)
-
-        # render for graphical representation of game-state
-        env.render()
-
-    # compute the winner / ranking
-    scores = [sum([pos > 40 for pos in state]) for state in obs]  # no of pawns in target field for each player
-    winner = np.argsort(scores)[-1]
-    wins[winner] += 1
+        obs, _, done, info = env.step(action)  # pass the action and get the new game-state
+    wins[winner(obs)] += 1  # compute the winner / ranking
 print(wins)

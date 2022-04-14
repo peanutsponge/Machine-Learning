@@ -4,7 +4,7 @@ import util as util
 
 
 start = True
-Q = 0
+Q = None
 
 
 # define the function player()
@@ -14,12 +14,12 @@ def player(obs, info):
         util.player = info['player']
         util.opponents.remove(util.player)
         start = False
-    return Q[util.toIndex(obs, info['eyes'])]
+    return Q[util.get_index(obs, info['eyes'])]
 
 
 def main():
     global Q
-    print('Importing player-file Q')
+    print('Importing player-file Group-13')
     Q = np.load("Q.npy")
     pass
 
