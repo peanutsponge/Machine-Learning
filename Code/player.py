@@ -1,6 +1,6 @@
 # import required packages
 import numpy as np
-import Qlearning.util as util
+import util as util
 
 
 start = True
@@ -20,7 +20,7 @@ def player(obs, info):
 def main():
     global Q
     print('Importing player-file Q')
-    Q = np.load("Qlearning/Q.npy")
+    Q = np.load("Q.npy")
     pass
 
 

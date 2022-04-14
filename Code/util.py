@@ -1,21 +1,23 @@
 import numpy as np
 import random
-from Code.ludo import random_player, eager_player
+from ludo import random_player, eager_player
 
 our_player = 'our_player'
 players = [our_player, random_player, random_player, random_player]
 player = 0
 opponents = [0, 1, 2, 3]
-backwards_view_range = 2
-forwards_view_range = 6
-no_forward = 2
-no_backward = 0
-no_pins = 1
+
+backwards_view_range = 2  # how many tiles it can see backwards
+forwards_view_range = 6  # how many tiles it can see forwards
+no_forward = 3  # how many opponents it can see forwards
+no_backward = 0  # how many opponents it can see backwards
+no_pins = 1  # how many of our own pins should be able to see
+
 Qdim = [forwards_view_range + 1] * no_pins * no_forward + \
        [backwards_view_range + 1] * no_pins * no_backward + \
        [4] * no_pins + \
        [6] + \
-       [4]
+       [4]  # the number of actions
 
 
 def evaluate_player(state, player_):
@@ -59,8 +61,8 @@ def start_game(env):
 
 
 def toIndex(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
-    index = np.zeros(len(Qdim)-1, dtype=int)
-    pins = np.argsort(state[player])
+    index = np.zeros(len(Qdim) - 1, dtype=int)
+    pins = np.argsort(state[player])  # TODO pins that are in the home are currently used -_-
     for i in range(no_pins):
         distances_p, distances_n = [], []
         pin_index = state[player][pins[i]]

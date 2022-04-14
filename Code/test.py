@@ -4,14 +4,14 @@ from ludo import make
 import numpy as np
 
 # import players
-from Qlearning.player import player as q_player
+from player import player as q_player
 from ludo import random_player
 
 # constants
 PLAYER2COLOR = ['Yellow', 'Red', 'Blue', 'Green']
 
 # create a list of players
-players = [q_player, random_player, q_player, random_player]
+players = [random_player, random_player, q_player, random_player]
 
 # create list of scores
 wins = [0, 0, 0, 0]
