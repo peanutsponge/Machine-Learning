@@ -62,7 +62,11 @@ def start_game(env):
 
 def toIndex(state, eyes):  # interpret the state and assign indexation indices inside the Q matrix
     index = np.zeros(len(Qdim) - 1, dtype=int)
-    pins = np.argsort(state[player])  # TODO pins that are in the home are currently used -_-
+    pins_state = np.array(state[player])
+    pins = np.argsort(pins_state)
+    pins = np.concatenate((pins[(pins_state <= 40) * (pins_state != 0)],
+                           pins[pins_state == 0],
+                           pins[pins_state > 40]))  # put pins in hb or start to the back
     for i in range(no_pins):
         distances_p, distances_n = [], []
         pin_index = state[player][pins[i]]
